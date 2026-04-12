@@ -85,6 +85,19 @@ async def clientes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(texto[:4000])
 
 
+async def backup(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        with open(ARCHIVO_CLIENTES, "rb") as archivo:
+            await context.bot.send_document(
+                chat_id=update.effective_user.id,
+                document=archivo,
+                filename="clientes.json",
+                caption="📁 Backup actual de clientes"
+            )
+    except Exception as e:
+        await update.message.reply_text(f"Error al enviar backup: {e}")
+
+
 async def vencidos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = cargar_clientes()
     ahora = datetime.now()
@@ -182,6 +195,7 @@ def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("backup", backup))
     app.add_handler(CommandHandler("clientes", clientes))
     app.add_handler(CommandHandler("vencidos", vencidos))
     app.add_handler(CommandHandler("revisar_vencidos", revisar_vencidos))
