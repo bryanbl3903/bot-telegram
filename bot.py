@@ -14,7 +14,10 @@ from telegram.ext import (
 
 TOKEN = os.getenv ("TOKEN")
 GROUP_CHAT_ID = -1001632540226
-ARCHIVO_CLIENTES = "clientes.json"
+ARCHIVO_CLIENTES = os.path.join(
+    os.getenv("RAILWAY_VOLUME_MOUNT_PATH", "/app/data"),
+    "clientes.json"
+)
 
 
 def cargar_clientes():
