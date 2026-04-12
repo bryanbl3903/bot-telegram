@@ -12,7 +12,7 @@ from telegram.ext import (
     filters,
 )
 
-TOKEN = "8536205267:AAH3oyiq_dfKiDIc5de_-X-bsUSxewspAPk"
+TOKEN = os.getenv ("TOKEN")
 GROUP_CHAT_ID = -1001632540226
 ARCHIVO_CLIENTES = "clientes.json"
 
