@@ -85,6 +85,45 @@ async def clientes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(texto[:4000])
 
 
+async def buscar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("Usa así: /buscar nombre_o_usuario")
+        return
+
+    termino = " ".join(context.args).strip().lower()
+    data = cargar_clientes()
+
+    resultados = []
+
+    for c in data.values():
+        nombre = c.get("nombre", "").lower()
+        username = c.get("username", "").lower()
+
+        if termino in nombre or termino in username:
+            resultados.append(c)
+
+    if not resultados:
+        await update.message.reply_text("No encontré usuarios con ese dato.")
+        return
+
+    texto = f"Resultados para: {termino}\n\n"
+
+    for c in resultados[:20]:
+        username = f"@{c['username']}" if c["username"] else "sin username"
+        texto += (
+            f"{c['nombre']}\n"
+            f"Usuario: {username}\n"
+            f"ID: {c['user_id']}\n"
+            f"Vence: {c['fecha_vencimiento']}\n"
+            f"Estado: {c['estado']}\n\n"
+        )
+
+    if len(resultados) > 20:
+        texto += f"Mostrando 20 de {len(resultados)} resultados."
+
+    await update.message.reply_text(texto[:4000])
+
+
 async def renovo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text("Usa así: /renovo ID o /renovo @usuario")
