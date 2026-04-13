@@ -85,6 +85,51 @@ async def clientes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(texto[:4000])
 
 
+async def renovo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("Usa así: /renovo ID o /renovo @usuario")
+        return
+
+    entrada = " ".join(context.args).strip()
+    data = cargar_clientes()
+
+    objetivo_id = None
+
+    if entrada.isdigit():
+        if entrada in data:
+            objetivo_id = entrada
+    else:
+        username_buscado = entrada.lower().replace("@", "")
+        for user_id, c in data.items():
+            username = c.get("username", "").lower()
+            if username == username_buscado:
+                objetivo_id = user_id
+                break
+
+    if not objetivo_id:
+        await update.message.reply_text("No encontré ese usuario.")
+        return
+
+    ahora = datetime.now()
+    fecha_actual_vencimiento = datetime.strptime(
+        data[objetivo_id]["fecha_vencimiento"], "%Y-%m-%d %H:%M:%S"
+    )
+
+    base = fecha_actual_vencimiento if fecha_actual_vencimiento > ahora else ahora
+    nuevo_vencimiento = base + timedelta(days=30)
+
+    data[objetivo_id]["fecha_vencimiento"] = nuevo_vencimiento.strftime("%Y-%m-%d %H:%M:%S")
+    data[objetivo_id]["estado"] = "activo"
+
+    guardar_clientes(data)
+
+    await update.message.reply_text(
+        f"✅ Renovado: {data[objetivo_id]['nombre']}\n"
+        f"ID: {objetivo_id}\n"
+        f"Nuevo vencimiento: {data[objetivo_id]['fecha_vencimiento']}"
+    )
+
+
 async def backup(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         with open(ARCHIVO_CLIENTES, "rb") as archivo:
@@ -196,6 +241,8 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("backup", backup))
+    app.add_handler(CommandHandler("buscar", buscar))
+    app.add_handler(CommandHandler("renovo", renovo))
     app.add_handler(CommandHandler("clientes", clientes))
     app.add_handler(CommandHandler("vencidos", vencidos))
     app.add_handler(CommandHandler("revisar_vencidos", revisar_vencidos))
