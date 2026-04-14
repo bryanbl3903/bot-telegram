@@ -85,6 +85,54 @@ async def clientes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(texto[:4000])
 
 
+async def dias(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if len(context.args) < 2:
+        await update.message.reply_text("Usa así: /dias ID_o_@usuario cantidad_de_dias")
+        return
+
+    entrada = context.args[0].strip()
+    dias_texto = context.args[1].strip()
+
+    if not dias_texto.isdigit():
+        await update.message.reply_text("La cantidad de días debe ser un número.")
+        return
+
+    cantidad_dias = int(dias_texto)
+    data = cargar_clientes()
+
+    objetivo_id = None
+
+    if entrada.isdigit():
+        if entrada in data:
+            objetivo_id = entrada
+    else:
+        username_buscado = entrada.lower().replace("@", "")
+        for user_id, c in data.items():
+            username = c.get("username", "").lower()
+            if username == username_buscado:
+                objetivo_id = user_id
+                break
+
+    if not objetivo_id:
+        await update.message.reply_text("No encontré ese usuario.")
+        return
+
+    ahora = datetime.now()
+    nuevo_vencimiento = ahora + timedelta(days=cantidad_dias)
+
+    data[objetivo_id]["fecha_vencimiento"] = nuevo_vencimiento.strftime("%Y-%m-%d %H:%M:%S")
+    data[objetivo_id]["estado"] = "activo"
+
+    guardar_clientes(data)
+
+    await update.message.reply_text(
+        f"✅ Tiempo actualizado para {data[objetivo_id]['nombre']}\n"
+        f"ID: {objetivo_id}\n"
+        f"Días asignados: {cantidad_dias}\n"
+        f"Nuevo vencimiento: {data[objetivo_id]['fecha_vencimiento']}"
+    )
+
+
 async def buscar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text("Usa así: /buscar nombre_o_usuario")
@@ -280,6 +328,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("backup", backup))
+    app.add_handler(CommandHandler("dias", dias))
     app.add_handler(CommandHandler("buscar", buscar))
     app.add_handler(CommandHandler("renovo", renovo))
     app.add_handler(CommandHandler("clientes", clientes))
