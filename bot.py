@@ -36,6 +36,25 @@ def guardar_clientes(clientes):
         json.dump(clientes, f, indent=4, ensure_ascii=False)
 
 
+def obtener_siguiente_cliente_numero(clientes):
+
+    numeros = []
+
+    for c in clientes.values():
+
+        numero = c.get("cliente_numero")
+
+        if isinstance(numero, int):
+
+            numeros.append(numero)
+
+    if not numeros:
+
+        return 1
+
+    return max(numeros) + 1
+
+
 def registrar_usuario(user):
 
     clientes = cargar_clientes()
@@ -78,6 +97,8 @@ def registrar_usuario(user):
 
         "user_id": user.id,
 
+        "cliente_numero": obtener_siguiente_cliente_numero(clientes),
+
         "nombre": user.full_name,
 
         "username": user.username if user.username else "",
@@ -108,6 +129,71 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Hola 👋\n"
         "Soy tu bot.\n"
         "Registro usuarios y expulso automáticamente a los vencidos."
+    )
+
+
+async def renovo_cliente(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    if not context.args:
+
+        await update.message.reply_text("Usa así: /renovo_cliente NUMERO")
+
+        return
+
+    if not context.args[0].isdigit():
+
+        await update.message.reply_text("El número de cliente debe ser un número.")
+
+        return
+
+    cliente_numero = int(context.args[0])
+
+    data = cargar_clientes()
+
+    objetivo_id = None
+
+    for user_id, c in data.items():
+
+        if c.get("cliente_numero") == cliente_numero:
+
+            objetivo_id = user_id
+
+            break
+
+    if not objetivo_id:
+
+        await update.message.reply_text("No encontré ese número de cliente.")
+
+        return
+
+    ahora = datetime.now()
+
+    fecha_actual_vencimiento = datetime.strptime(
+
+        data[objetivo_id]["fecha_vencimiento"], "%Y-%m-%d %H:%M:%S"
+
+    )
+
+    base = fecha_actual_vencimiento if fecha_actual_vencimiento > ahora else ahora
+
+    nuevo_vencimiento = base + timedelta(days=30)
+
+    data[objetivo_id]["fecha_vencimiento"] = nuevo_vencimiento.strftime("%Y-%m-%d %H:%M:%S")
+
+    data[objetivo_id]["estado"] = "activo"
+
+    guardar_clientes(data)
+
+    await update.message.reply_text(
+
+        f"✅ Renovado cliente #{cliente_numero}\n"
+
+        f"Nombre: {data[objetivo_id]['nombre']}\n"
+
+        f"ID: {objetivo_id}\n"
+
+        f"Nuevo vencimiento: {data[objetivo_id]['fecha_vencimiento']}"
+
     )
 
 
@@ -452,6 +538,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("backup", backup))
+    app.add_handler(CommandHandler("renovo_cliente", renovo_cliente))
     app.add_handler(CommandHandler("limpiar_duplicados", limpiar_duplicados))
     app.add_handler(CommandHandler("dias", dias))
     app.add_handler(CommandHandler("buscar", buscar))
