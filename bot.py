@@ -111,6 +111,81 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def limpiar_duplicados(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    data = cargar_clientes()
+
+    limpio = {}
+
+    eliminados = 0
+
+    reporte = []
+
+    def convertir_fecha(fecha_texto):
+
+        try:
+
+            return datetime.strptime(fecha_texto, "%Y-%m-%d %H:%M:%S")
+
+        except:
+
+            return datetime.min
+
+    for clave, cliente in data.items():
+
+        user_id = str(cliente.get("user_id", clave))
+
+        nombre = cliente.get("nombre", "Sin nombre")
+
+        cliente["user_id"] = int(user_id) if user_id.isdigit() else user_id
+
+        if user_id not in limpio:
+
+            limpio[user_id] = cliente
+
+        else:
+
+            existente = limpio[user_id]
+
+            fecha_existente = convertir_fecha(existente.get("fecha_vencimiento", ""))
+
+            fecha_nueva = convertir_fecha(cliente.get("fecha_vencimiento", ""))
+
+            if fecha_nueva > fecha_existente:
+
+                reporte.append(f"🔁 Reemplazado: {nombre} | ID: {user_id}")
+
+                limpio[user_id] = cliente
+
+            else:
+
+                reporte.append(f"🗑️ Eliminado: {nombre} | ID: {user_id}")
+
+            eliminados += 1
+
+    guardar_clientes(limpio)
+
+    mensaje = (
+
+        f"✅ Limpieza terminada\n"
+
+        f"Duplicados eliminados: {eliminados}\n"
+
+        f"Clientes finales: {len(limpio)}\n\n"
+
+    )
+
+    # Evita que el mensaje sea demasiado largo
+
+    detalle = "\n".join(reporte[:20])
+
+    if len(reporte) > 20:
+
+        detalle += f"\n... y {len(reporte) - 20} más"
+
+    await update.message.reply_text(mensaje + detalle)
+
+
 async def clientes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = cargar_clientes()
 
@@ -377,6 +452,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("backup", backup))
+    app.add_handler(CommandHandler("limpiar_duplicados", limpiar_duplicados))
     app.add_handler(CommandHandler("dias", dias))
     app.add_handler(CommandHandler("buscar", buscar))
     app.add_handler(CommandHandler("renovo", renovo))
