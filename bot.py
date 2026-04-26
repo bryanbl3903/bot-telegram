@@ -401,7 +401,8 @@ async def buscar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Usa así: /buscar nombre_o_usuario")
         return
 
-    termino = " ".join(context.args).strip().lower()
+    termino = "".join(context.args).strip()
+    termino_minuscula = termino.lower()
     data = cargar_clientes()
 
     resultados = []
@@ -413,9 +414,10 @@ async def buscar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         cliente_numero_texto = str(c.get("cliente_numero", ""))
 
     if (
-        termino in nombre
+        termino_minuscula in nombre
+        or termino_minuscula in username
         or termino == user_id_texto
-        or termino in user_id_texto
+        or termino == str(user_id)
         or termino == cliente_numero_texto
     ):
         resultados.append(c)
