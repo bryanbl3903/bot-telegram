@@ -414,7 +414,7 @@ async def buscar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if (
         termino in nombre
-        or termino in username
+        or termino == user_id_texto
         or termino in user_id_texto
         or termino == cliente_numero_texto
     ):
