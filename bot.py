@@ -37,21 +37,70 @@ def guardar_clientes(clientes):
 
 
 def registrar_usuario(user):
-    clientes = cargar_clientes()
-    ahora = datetime.now()
-    vencimiento = ahora + timedelta(days=30)
 
-    clientes[str(user.id)] = {
+    clientes = cargar_clientes()
+
+    user_id = str(user.id)
+
+    ahora = datetime.now()
+
+    nuevo_vencimiento = ahora + timedelta(days=30)
+
+    # Si el usuario ya existe en la lista
+
+    if user_id in clientes:
+
+        cliente = clientes[user_id]
+
+        # Si sigue activo, NO se le reinician los 30 días
+
+        if cliente.get("estado") == "activo":
+
+            cliente["nombre"] = user.full_name
+
+            cliente["username"] = user.username if user.username else ""
+
+            guardar_clientes(clientes)
+
+            print(f"Usuario ya activo, no se reinicia: {user.full_name} | ID: {user.id}")
+
+            return
+
+        # Si estaba vencido, se borra su registro anterior y se crea uno nuevo
+
+        if cliente.get("estado") == "vencido":
+
+            del clientes[user_id]
+
+    # Crear registro nuevo
+
+    clientes[user_id] = {
+
         "user_id": user.id,
+
         "nombre": user.full_name,
+
         "username": user.username if user.username else "",
+
         "fecha_ingreso": ahora.strftime("%Y-%m-%d %H:%M:%S"),
-        "fecha_vencimiento": vencimiento.strftime("%Y-%m-%d %H:%M:%S"),
+
+        "fecha_vencimiento": nuevo_vencimiento.strftime("%Y-%m-%d %H:%M:%S"),
+
         "estado": "activo"
+
     }
 
     guardar_clientes(clientes)
-    print(f"Guardado: {user.full_name} | ID: {user.id} | Vence: {vencimiento}")
+
+    print(
+
+        f"Guardado nuevo: {user.full_name} | "
+
+        f"ID: {user.id} | "
+
+        f"Vence: {nuevo_vencimiento}"
+
+    )
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
