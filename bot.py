@@ -420,9 +420,9 @@ async def buscar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ):
         resultados.append(c)
 
-if not resultados:
-    await update.message.reply_text("No encontré usuarios con ese dato.")
-    return
+    if not resultados:
+        await update.message.reply_text("No encontré usuarios con ese dato.")
+        return
 
     texto = f"Resultados para: {termino}\n\n"
 
