@@ -412,6 +412,9 @@ async def buscar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         username = c.get("username", "").lower()
         user_id_texto = str(c.get("user_id", user_id))
         cliente_numero_texto = str(c.get("cliente_numero", ""))
+        
+        print("BUSCANDO:", termino)
+        print("ID GUARDADO:", user_id_texto, "CLAVE:", str(user_id))
 
     if (
         termino_minuscula in nombre
