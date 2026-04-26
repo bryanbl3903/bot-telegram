@@ -398,13 +398,13 @@ async def dias(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def buscar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        await update.message.reply_text("Usa así: /buscar nombre_o_usuario")
+        await update.message.reply_text("Usa así: /buscar nombre_o_usuario_o_id")
         return
 
-    termino = "".join(context.args).strip()
+    termino = " ".join(context.args).strip()
     termino_minuscula = termino.lower()
-    data = cargar_clientes()
 
+    data = cargar_clientes()
     resultados = []
 
     for user_id, c in data.items():
@@ -412,18 +412,15 @@ async def buscar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         username = c.get("username", "").lower()
         user_id_texto = str(c.get("user_id", user_id))
         cliente_numero_texto = str(c.get("cliente_numero", ""))
-        
-        print("BUSCANDO:", termino)
-        print("ID GUARDADO:", user_id_texto, "CLAVE:", str(user_id))
 
-    if (
-        termino_minuscula in nombre
-        or termino_minuscula in username
-        or termino == user_id_texto
-        or termino == str(user_id)
-        or termino == cliente_numero_texto
-    ):
-        resultados.append(c)
+        if (
+            termino_minuscula in nombre
+            or termino_minuscula in username
+            or termino == user_id_texto
+            or termino == str(user_id)
+            or termino == cliente_numero_texto
+        ):
+            resultados.append(c)
 
     if not resultados:
         await update.message.reply_text("No encontré usuarios con ese dato.")
@@ -432,19 +429,20 @@ async def buscar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto = f"Resultados para: {termino}\n\n"
 
     for c in resultados[:20]:
-        username = f"@{c['username']}" if c["username"] else "sin username"
+        username = f"@{c.get('username')}" if c.get("username") else "sin username"
         texto += (
-            f"{c['nombre']}\n"
+            f"{c.get('nombre', 'Sin nombre')}\n"
             f"Usuario: {username}\n"
-            f"ID: {c['user_id']}\n"
-            f"Vence: {c['fecha_vencimiento']}\n"
-            f"Estado: {c['estado']}\n\n"
+            f"ID: {c.get('user_id')}\n"
+            f"Cliente número: {c.get('cliente_numero')}\n"
+            f"Vence: {c.get('fecha_vencimiento')}\n"
+            f"Estado: {c.get('estado')}\n\n"
         )
 
     if len(resultados) > 20:
         texto += f"Mostrando 20 de {len(resultados)} resultados."
 
-    await update.message.reply_text(texto[:4000])
+    await update.message.reply_text(texto)
 
 
 async def renovo(update: Update, context: ContextTypes.DEFAULT_TYPE):
