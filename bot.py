@@ -406,13 +406,30 @@ async def buscar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     resultados = []
 
-    for c in data.values():
-        nombre = c.get("nombre", "").lower()
-        username = c.get("username", "").lower()
+    for user_id, c in data.items():
 
-        if termino in nombre or termino in username:
-            resultados.append(c)
+    nombre = c.get("nombre", "").lower()
 
+    username = c.get("username", "").lower()
+
+    user_id_texto = str(c.get("user_id", user_id))
+
+    cliente_numero_texto = str(c.get("cliente_numero", ""))
+
+    if (
+
+        termino in nombre
+
+        or termino in username
+
+        or termino in user_id_texto
+
+        or termino == cliente_numero_texto
+
+    ):
+
+        resultados.append(c)
+        
     if not resultados:
         await update.message.reply_text("No encontré usuarios con ese dato.")
         return
