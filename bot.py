@@ -132,6 +132,59 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def asignar_numeros(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    data = cargar_clientes()
+
+    numeros_usados = set()
+
+    asignados = 0
+
+    for c in data.values():
+
+        numero = c.get("cliente_numero")
+
+        if isinstance(numero, int):
+
+            numeros_usados.add(numero)
+
+        elif isinstance(numero, str) and numero.isdigit():
+
+            c["cliente_numero"] = int(numero)
+
+            numeros_usados.add(int(numero))
+
+    siguiente = 1
+
+    for user_id, c in data.items():
+
+        numero = c.get("cliente_numero")
+
+        if not isinstance(numero, int):
+
+            while siguiente in numeros_usados:
+
+                siguiente += 1
+
+            c["cliente_numero"] = siguiente
+
+            numeros_usados.add(siguiente)
+
+            asignados += 1
+
+    guardar_clientes(data)
+
+    await update.message.reply_text(
+
+        f"✅ Números asignados correctamente\n"
+
+        f"Clientes actualizados: {asignados}\n"
+
+        f"Total clientes: {len(data)}"
+
+    )
+
+
 async def renovo_cliente(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not context.args:
@@ -538,6 +591,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("backup", backup))
+    app.add_handler(CommandHandler("asignar_numeros", asignar_numeros))
     app.add_handler(CommandHandler("renovo_cliente", renovo_cliente))
     app.add_handler(CommandHandler("limpiar_duplicados", limpiar_duplicados))
     app.add_handler(CommandHandler("dias", dias))
