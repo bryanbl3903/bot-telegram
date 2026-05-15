@@ -646,20 +646,20 @@ async def detectar_por_estado(update: Update, context: ContextTypes.DEFAULT_TYPE
     entro = estado_nuevo in ["member", "administrator", "restricted"]
 
     if estaba_fuera and entro:
-    user = cambio.new_chat_member.user
+        user = cambio.new_chat_member.user
 
-    data_antes = cargar_clientes()
-    tipo_ingreso = "reingreso" if str(user.id) in data_antes else "nuevo"
+        data_antes = cargar_clientes()
+        tipo_ingreso = "reingreso" if str(user.id) in data_antes else "nuevo"
 
-    registrar_usuario(user, update.effective_chat.id)
+        registrar_usuario(user, update.effective_chat.id)
 
-    await avisar_ingreso_admin(
-        context,
-        user,
-        update.effective_chat.id,
-        update.effective_chat.title,
-        tipo_ingreso
-    )
+        await avisar_ingreso_admin(
+            context,
+            user,
+            update.effective_chat.id,
+            update.effective_chat.title,
+            tipo_ingreso
+        )
 
 
 async def revisar_vencidos_automaticamente(context: ContextTypes.DEFAULT_TYPE):
