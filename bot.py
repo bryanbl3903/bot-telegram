@@ -55,73 +55,53 @@ def obtener_siguiente_cliente_numero(clientes):
     return max(numeros) + 1
 
 
-def registrar_usuario(user):
-
+def registrar_usuario(user, chat_id):
     clientes = cargar_clientes()
-
     user_id = str(user.id)
+    chat_id_texto = str(chat_id)
 
     ahora = datetime.now()
-
     nuevo_vencimiento = ahora + timedelta(days=30)
 
-    # Si el usuario ya existe en la lista
-
     if user_id in clientes:
-
         cliente = clientes[user_id]
 
-        # Si sigue activo, NO se le reinician los 30 días
+        if "grupos" not in cliente:
+            cliente["grupos"] = []
+
+        if chat_id_texto not in cliente["grupos"]:
+            cliente["grupos"].append(chat_id_texto)
+
+        cliente["nombre"] = user.full_name
+        cliente["username"] = user.username if user.username else ""
 
         if cliente.get("estado") == "activo":
-
-            cliente["nombre"] = user.full_name
-
-            cliente["username"] = user.username if user.username else ""
-
             guardar_clientes(clientes)
-
-            print(f"Usuario ya activo, no se reinicia: {user.full_name} | ID: {user.id}")
-
+            print(f"Usuario ya activo, no se reinicia: {user.full_name}")
             return
 
-        # Si estaba vencido, se borra su registro anterior y se crea uno nuevo
-
         if cliente.get("estado") == "vencido":
+            cliente["fecha_ingreso"] = ahora.strftime("%Y-%m-%d %H:%M:%S")
+            cliente["fecha_vencimiento"] = nuevo_vencimiento.strftime("%Y-%m-%d %H:%M:%S")
+            cliente["estado"] = "activo"
 
-            del clientes[user_id]
-
-    # Crear registro nuevo
+            guardar_clientes(clientes)
+            print(f"Usuario reactivado: {user.full_name} | Grupo: {chat_id}")
+            return
 
     clientes[user_id] = {
-
-        "user_id": user.id,
-
         "cliente_numero": obtener_siguiente_cliente_numero(clientes),
-
+        "user_id": user.id,
         "nombre": user.full_name,
-
         "username": user.username if user.username else "",
-
         "fecha_ingreso": ahora.strftime("%Y-%m-%d %H:%M:%S"),
-
         "fecha_vencimiento": nuevo_vencimiento.strftime("%Y-%m-%d %H:%M:%S"),
-
-        "estado": "activo"
-
+        "estado": "activo",
+        "grupos": [chat_id_texto]
     }
 
     guardar_clientes(clientes)
-
-    print(
-
-        f"Guardado nuevo: {user.full_name} | "
-
-        f"ID: {user.id} | "
-
-        f"Vence: {nuevo_vencimiento}"
-
-    )
+    print(f"Guardado nuevo: {user.full_name} | Grupo: {chat_id}")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
