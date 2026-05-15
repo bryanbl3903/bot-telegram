@@ -112,6 +112,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def miid(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"Tu ID es: {update.effective_user.id}")
+
+
 async def limpiar_vencidos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat = update.effective_chat
 
@@ -653,6 +657,7 @@ def main():
     app.add_handler(CommandHandler("renovo_cliente", renovo_cliente))
     app.add_handler(CommandHandler("limpiar_duplicados", limpiar_duplicados))
     app.add_handler(CommandHandler("dias", dias))
+    app.add_handler(CommandHandler("miid", miid))
     app.add_handler(CommandHandler("buscar", buscar))
     app.add_handler(CommandHandler("renovo", renovo))
     app.add_handler(CommandHandler("clientes", clientes))
