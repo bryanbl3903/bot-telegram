@@ -515,7 +515,7 @@ async def detectar_por_mensaje(update: Update, context: ContextTypes.DEFAULT_TYP
         return
 
     for user in update.message.new_chat_members:
-        registrar_usuario(user)
+        registrar_usuario(user, update.effective_chat.id)
 
 
 async def detectar_por_estado(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -530,7 +530,7 @@ async def detectar_por_estado(update: Update, context: ContextTypes.DEFAULT_TYPE
     entro = estado_nuevo in ["member", "administrator", "restricted"]
 
     if estaba_fuera and entro:
-        registrar_usuario(cambio.new_chat_member.user)
+        registrar_usuario(cambio.new_chat_member.user, update.effective_chat.id)
 
 
 async def revisar_vencidos_automaticamente(context: ContextTypes.DEFAULT_TYPE):
