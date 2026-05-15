@@ -619,19 +619,18 @@ async def detectar_por_mensaje(update: Update, context: ContextTypes.DEFAULT_TYP
         return
 
     for user in update.message.new_chat_members:
+        data_antes = cargar_clientes()
+        tipo_ingreso = "reingreso" if str(user.id) in data_antes else "nuevo"
 
-    data_antes = cargar_clientes()
-    tipo_ingreso = "reingreso" if str(user.id) in data_antes else "nuevo"
+        registrar_usuario(user, update.effective_chat.id)
 
-    registrar_usuario(user, update.effective_chat.id)
-
-    await avisar_ingreso_admin(
-        context,
-        user,
-        update.effective_chat.id,
-        update.effective_chat.title,
-        tipo_ingreso
-    )
+        await avisar_ingreso_admin(
+            context,
+            user,
+            update.effective_chat.id,
+            update.effective_chat.title,
+            tipo_ingreso
+        )
 
 
 async def detectar_por_estado(update: Update, context: ContextTypes.DEFAULT_TYPE):
