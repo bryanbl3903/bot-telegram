@@ -112,6 +112,73 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def limpiar_vencidos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat = update.effective_chat
+
+    if chat.type not in ["group", "supergroup"]:
+        await update.message.reply_text("Usa este comando dentro del grupo que quieres limpiar.")
+        return
+
+    chat_id = chat.id
+    chat_id_texto = str(chat_id)
+
+    data = cargar_clientes()
+    ahora = datetime.now()
+
+    expulsados = 0
+    errores = 0
+
+    for user_id, c in data.items():
+        try:
+            fecha_v = datetime.strptime(c["fecha_vencimiento"], "%Y-%m-%d %H:%M:%S")
+        except Exception:
+            continue
+
+        grupos = c.get("grupos", [])
+
+        if chat_id_texto not in grupos:
+            continue
+
+        esta_vencido = fecha_v <= ahora or c.get("estado") == "vencido"
+
+        if not esta_vencido:
+            continue
+
+        try:
+            miembro = await context.bot.get_chat_member(
+                chat_id=chat_id,
+                user_id=int(user_id)
+            )
+
+            if miembro.status not in ["member", "restricted"]:
+                continue
+
+            await context.bot.ban_chat_member(chat_id=chat_id, user_id=int(user_id))
+            await context.bot.unban_chat_member(chat_id=chat_id, user_id=int(user_id))
+
+            grupos.remove(chat_id_texto)
+            c["grupos"] = grupos
+
+            if len(grupos) == 0:
+                c["estado"] = "vencido"
+            else:
+                c["estado"] = "activo"
+
+            expulsados += 1
+
+        except Exception as e:
+            errores += 1
+            print(f"Error expulsando {user_id}: {e}")
+
+    guardar_clientes(data)
+
+    await update.message.reply_text(
+        f"✅ Limpieza terminada en este grupo.\n"
+        f"Expulsados: {expulsados}\n"
+        f"Errores: {errores}"
+    )
+
+
 async def asignar_numeros(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     data = cargar_clientes()
@@ -581,6 +648,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("backup", backup))
+    app.add_handler(CommandHandler("limpiar_vencidos", limpiar_vencidos))
     app.add_handler(CommandHandler("asignar_numeros", asignar_numeros))
     app.add_handler(CommandHandler("renovo_cliente", renovo_cliente))
     app.add_handler(CommandHandler("limpiar_duplicados", limpiar_duplicados))
@@ -599,12 +667,6 @@ def main():
         ChatMemberHandler(detectar_por_estado, ChatMemberHandler.CHAT_MEMBER)
     )
 
-    if app.job_queue:
-        app.job_queue.run_repeating(
-            revisar_vencidos_automaticamente,
-            interval=60,
-            first=10
-        )
 
     print("Bot encendido...")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
