@@ -13,6 +13,7 @@ from telegram.ext import (
 )
 
 TOKEN = os.getenv ("TOKEN")
+ADMIN_CHAT_ID = 5757697897
 GROUP_CHAT_ID = -1001632540226
 ARCHIVO_CLIENTES = os.path.join(
     os.getenv("RAILWAY_VOLUME_MOUNT_PATH", "/app/data"),
@@ -110,6 +111,38 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Soy tu bot.\n"
         "Registro usuarios y expulso automáticamente a los vencidos."
     )
+
+
+async def avisar_ingreso_admin(context: ContextTypes.DEFAULT_TYPE, user, chat_id, chat_title, tipo_ingreso):
+    data = cargar_clientes()
+    cliente = data.get(str(user.id))
+
+    if not cliente:
+        return
+
+    if tipo_ingreso == "nuevo":
+        titulo = "🆕 Usuario nuevo"
+    else:
+        titulo = "🔄 Reingreso"
+
+    username = f"@{cliente.get('username')}" if cliente.get("username") else "sin username"
+    grupos = cliente.get("grupos", [])
+
+    mensaje = (
+        f"{titulo}\n\n"
+        f"Grupo: {chat_title}\n"
+        f"Grupo ID: {chat_id}\n\n"
+        f"Cliente #: {cliente.get('cliente_numero', 'sin número')}\n"
+        f"Telegram ID: {cliente.get('user_id')}\n"
+        f"Nombre: {cliente.get('nombre')}\n"
+        f"Username: {username}\n"
+        f"Fecha ingreso: {cliente.get('fecha_ingreso')}\n"
+        f"Fecha vencimiento: {cliente.get('fecha_vencimiento')}\n"
+        f"Estado: {cliente.get('estado')}\n"
+        f"Grupos: {', '.join(grupos) if grupos else 'ninguno'}"
+    )
+
+    await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=mensaje)
 
 
 async def miid(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -586,7 +619,19 @@ async def detectar_por_mensaje(update: Update, context: ContextTypes.DEFAULT_TYP
         return
 
     for user in update.message.new_chat_members:
-        registrar_usuario(user, update.effective_chat.id)
+
+    data_antes = cargar_clientes()
+    tipo_ingreso = "reingreso" if str(user.id) in data_antes else "nuevo"
+
+    registrar_usuario(user, update.effective_chat.id)
+
+    await avisar_ingreso_admin(
+        context,
+        user,
+        update.effective_chat.id,
+        update.effective_chat.title,
+        tipo_ingreso
+    )
 
 
 async def detectar_por_estado(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -601,7 +646,20 @@ async def detectar_por_estado(update: Update, context: ContextTypes.DEFAULT_TYPE
     entro = estado_nuevo in ["member", "administrator", "restricted"]
 
     if estaba_fuera and entro:
-        registrar_usuario(cambio.new_chat_member.user, update.effective_chat.id)
+    user = cambio.new_chat_member.user
+
+    data_antes = cargar_clientes()
+    tipo_ingreso = "reingreso" if str(user.id) in data_antes else "nuevo"
+
+    registrar_usuario(user, update.effective_chat.id)
+
+    await avisar_ingreso_admin(
+        context,
+        user,
+        update.effective_chat.id,
+        update.effective_chat.title,
+        tipo_ingreso
+    )
 
 
 async def revisar_vencidos_automaticamente(context: ContextTypes.DEFAULT_TYPE):
